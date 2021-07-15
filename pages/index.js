@@ -39,7 +39,7 @@ function ProfileRelationsBox({ title, items }) {
           return (
             <li key={item.id}>
               <a href={item.html_url} key={item.id}>
-                <img src={item.image ? item.image : item.avatar_url} />
+                <img src={item.imageUrl ? item.imageUrl : item.avatar_url} />
                 <span>{item.title ? item.title : item.login}</span>
               </a>
             </li>
@@ -51,37 +51,83 @@ function ProfileRelationsBox({ title, items }) {
 }
 
 export default function Home() {
-  const [comunidades, setComunidades] = useState([
-    {
-      id: "1651698453198",
-      title: "Eu odeio acordar cedo",
-      image: "https://alurakut.vercel.app/capa-comunidade-01.jpg",
-    },
-  ]);
+  const [comunidades, setComunidades] = useState([]);
   const [seguidores, setSeguidores] = useState([]);
   const gitHubUser = "cesant3";
-  // const pessoasFavoritas = [
-  //   "juunegreiros",
-  //   "omariosouto",
-  //   "peas",
-  //   "rafaballerini",
-  //   "marcobrunodev",
-  //   "felipefialho",
-  //   "felipefialho",
-  // ];
+  const pessoasFavoritas = [
+    {
+      id: 1,
+      title: "juunegreiros",
+      html_url: "https://github.com/juunegreiros",
+      imageUrl: "https://github.com/juunegreiros.png",
+    },
+    {
+      id: 2,
+      title: "omariosouto",
+      html_url: "https://github.com/omariosouto",
+      imageUrl: "https://github.com/omariosouto.png",
+    },
+    {
+      id: 3,
+      title: "peas",
+      html_url: "https://github.com/peas",
+      imageUrl: "https://github.com/peas.png",
+    },
+    {
+      id: 4,
+      title: "rafaballerini",
+      html_url: "https://github.com/rafaballerini",
+      imageUrl: "https://github.com/rafaballerini.png",
+    },
+    {
+      id: 5,
+      title: "marcobrunodev",
+      html_url: "https://github.com/marcobrunodev",
+      imageUrl: "https://github.com/marcobrunodev.png",
+    },
+    {
+      id: 6,
+      title: "felipefialho",
+      html_url: "https://github.com/felipefialho",
+      imageUrl: "https://github.com/felipefialho.png",
+    },
+    {
+      id: 7,
+      title: "felipefialho",
+      html_url: "https://github.com/felipefialho",
+      imageUrl: "https://github.com/felipefialho.png",
+    },
+  ];
 
   useEffect(() => {
     fetch("https://api.github.com/users/cesant3/followers")
-      .then((res) => {
-        return res.json();
-      })
-      .then((respostaCompleta) => {
-        console.log(respostaCompleta);
-        setSeguidores(respostaCompleta);
-      })
-      .catch((e) => {
-        console.log(e);
-      });
+      .then((res) => res.json())
+      .then((respostaCompleta) => setSeguidores(respostaCompleta))
+      .catch((e) => console.log(e));
+
+    fetch("https://graphql.datocms.com/", {
+      method: "POST",
+      headers: {
+        Authorization: "7617e4fcde7df421811701c57bafb6",
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        query: `query {
+          allCommunities {
+            id,
+            title,
+            creatorSlug,
+            imageUrl
+          }
+        }`,
+      }),
+    })
+      .then((response) => response.json())
+      .then((respostaCompleta) =>
+        setComunidades(respostaCompleta.data.allCommunities)
+      )
+      .catch((e) => console.log(e));
   }, []);
 
   return (
@@ -105,11 +151,22 @@ export default function Home() {
                 e.preventDefault();
                 const dadosDoForm = new FormData(e.target);
                 const comunidade = {
-                  id: new Date().toISOString(),
                   title: dadosDoForm.get("title"),
-                  image: dadosDoForm.get("image"),
+                  imageUrl: dadosDoForm.get("image"),
+                  creatorSlug: gitHubUser,
                 };
-                setComunidades([...comunidades, comunidade]);
+
+                fetch("/api/comunidades", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(comunidade),
+                }).then(async (response) => {
+                  const dados = await response.json();
+                  const comunidade = dados.register;
+                  setComunidades([...comunidades, comunidade]);
+                });
               }}
             >
               <div>
@@ -136,10 +193,8 @@ export default function Home() {
           className="profileRelationsArea"
           style={{ gridArea: "profileRelationsArea" }}
         >
-          <ProfileRelationsBox 
-            title="Comunidades" 
-            items={comunidades} 
-          />
+          <ProfileRelationsBox title="Comunidades" items={comunidades} />
+          <ProfileRelationsBox title="Amigos" items={pessoasFavoritas} />
           <ProfileRelationsBox
             title="Pessoas da comunidade"
             items={seguidores}
